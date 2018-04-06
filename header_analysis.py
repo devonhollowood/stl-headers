@@ -137,10 +137,22 @@ for (header1,header2),count in header_cooccurrences.most_common():
   u = header_to_index[header1]
   v = header_to_index[header2]
 
-  cooccurrence_matrix[u,v] = count
-  cooccurrence_matrix[v,u] = count
+  expected = header_counts[header1] * header_counts[header2] / total
 
-plt.matshow(np.log(cooccurrence_matrix+1))
+  cooccurrence_matrix[u,v] = count - expected
+  cooccurrence_matrix[v,u] = count - expected
+
+# Since argument to `where` is evaluated in full, we expect to take the log
+# of some zeros. That's fine (since those numbers won't be present in the
+# final matrix), and we shouldn't warn about them.
+with np.errstate(divide='ignore'):
+  log_cooccur = np.sign(cooccurrence_matrix) * np.where(
+    cooccurrence_matrix != 0,
+    np.log(np.abs(cooccurrence_matrix)),
+    cooccurrence_matrix
+  )
+
+plt.matshow(log_cooccur)
 plt.xticks(range(len(labels)), labels, rotation="vertical")
 plt.yticks(range(len(labels)), labels)
 
